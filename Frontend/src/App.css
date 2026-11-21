@@ -1,5 +1,5 @@
 .counter {
-  font-size: 16px;
+  font-size: 24px;
   padding: 5px 10px;
   border-radius: 5px;
   color: var(--accent);
@@ -14,6 +14,10 @@
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+  .vyper{
+    width: auto;
+    height: 48px;
   }
 }
 

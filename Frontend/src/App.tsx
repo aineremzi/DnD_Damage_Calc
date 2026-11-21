@@ -21,7 +21,7 @@ function App() {
           onClick={() => setCount((count) => Math.floor(Math.random()*21 - 10))}
         >
           <a>
-            <img className="button-icon" src={vyper} alt="" /> is {count}
+            <img className="vyper" src={vyper} alt="" /> is {count} 
           </a>
         </button>
       </section>
