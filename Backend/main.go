@@ -9,12 +9,15 @@ func main() {
 		"d4":  0,
 		"d6":  0,
 		"d8":  0,
-		"d10": 0,
-		"d20": 20,
+		"d10": 1,
+		"d20": 0,
 	}
 
-	var chance float64 = 1
-	shots, bonus := 1, 0
+	var chance float64 = 0.65
+	shots, bonus := 3, 0
 	ans := getDistribution(dices, chance, shots, bonus)
-	fmt.Println(ans)
+	for i := range ans {
+		fmt.Println(i, ": ", ans[i])
+	}
+
 }

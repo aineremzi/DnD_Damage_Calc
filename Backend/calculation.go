@@ -1,10 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"math"
-)
-
 func getMean(distr map[int]float64) float64 {
 	return 0
 }
@@ -18,103 +13,105 @@ func getStdDeviation(distr map[int]float64) float64 {
 	return 0
 }
 
-func updateValuesD4(dices map[string]int, values []int, bonus int) []int {
-	for i := 0; i < dices["d4"]; i++ {
-		temp := values
-		for j := 1; j < 5; j++ {
-			for k := 0; k < len(temp); k++ {
-				value := max(j+temp[k]+bonus, 0)
-				values = append(values, value)
-			}
-		}
-		values = values[len(temp):]
-	}
-	return values
-}
-func updateValuesD6(dices map[string]int, values []int, bonus int) []int {
-	for i := 0; i < dices["d6"]; i++ {
-		temp := values
-		for j := 1; j < 7; j++ {
-			for k := 0; k < len(temp); k++ {
-				value := max(j+temp[k]+bonus, 0)
-				values = append(values, value)
-			}
-		}
-		values = values[len(temp):]
-	}
-	return values
-}
-func updateValuesD8(dices map[string]int, values []int, bonus int) []int {
-	for i := 0; i < dices["d8"]; i++ {
-		temp := values
-		for j := 1; j < 9; j++ {
-			for k := 0; k < len(temp); k++ {
-				value := max(j+temp[k]+bonus, 0)
-				values = append(values, value)
-			}
-		}
-		values = values[len(temp):]
-	}
-	return values
-}
-func updateValuesD10(dices map[string]int, values []int, bonus int) []int {
-	for i := 0; i < dices["d10"]; i++ {
-		temp := values
-		for j := 1; j < 11; j++ {
-			for k := 0; k < len(temp); k++ {
-				value := max(j+temp[k]+bonus, 0)
-				values = append(values, value)
-			}
-		}
-		values = values[len(temp):]
-	}
-	return values
-}
-func updateValuesD12(dices map[string]int, values []int, bonus int) []int {
-	for i := 0; i < dices["d12"]; i++ {
-		temp := values
-		for j := 1; j < 12; j++ {
-			for k := 0; k < len(temp); k++ {
-				value := max(j+temp[k]+bonus, 0)
-				values = append(values, value)
-			}
-		}
-		values = values[len(temp):]
-	}
-	return values
-}
-func updateValuesD20(dices map[string]int, values []int, bonus int) []int {
-	for i := 0; i < dices["d20"]; i++ {
-		temp := values
-		for j := 1; j < 21; j++ {
-			for k := 0; k < len(temp); k++ {
-				value := max(j+temp[k]+bonus, 0)
-				values = append(values, value)
-			}
-		}
-		values = values[len(temp):]
-		fmt.Println(i)
-	}
-	return values
-}
-
-func getDistribution(dices map[string]int, chance float64, shots int, bonus int) map[int]float64 {
-	distr := make(map[int]float64)
-	values := []int{0}
-
-	distr[0] = math.Pow(1-chance, float64(shots))
-
-	values = updateValuesD4(dices, values, bonus)
-	values = updateValuesD6(dices, values, bonus)
-	values = updateValuesD8(dices, values, bonus)
-	values = updateValuesD10(dices, values, bonus)
-	values = updateValuesD12(dices, values, bonus)
-	values = updateValuesD20(dices, values, bonus)
-
-	n := len(values)
+func calculateDice(distr []float64, n int, dice int, maxDmg int) []float64 {
 	for i := 0; i < n; i++ {
-		distr[values[i]] += float64(1) / float64(n) * chance
+		next := make([]float64, maxDmg+1)
+		for s := 0; s <= maxDmg; s++ {
+			if distr[s] == 0 {
+				continue
+			}
+			for f := 1; f <= dice; f++ {
+				if s+f <= maxDmg {
+					next[s+f] += distr[s] / float64(dice)
+				}
+			}
+		}
+		distr = next
+	}
+	return distr
+}
+
+func calculateShots(distr []float64, n int, chance float64) []float64 {
+	tempDistr := make([]float64, cap(distr)*n-n+1)
+	next := make([]float64, cap(tempDistr))
+	tempDistr[0] = 1
+	for i := 0; i < n; i++ {
+		for j := range next {
+			next[j] = 0
+		}
+		for j := 0; j < len(next); j++ {
+			next[j] += (1 - chance) * tempDistr[j]
+			for k := 0; k < len(distr); k++ {
+				if j+k < cap(tempDistr) {
+					next[j+k] += chance * distr[k] * tempDistr[j]
+				}
+			}
+		}
+		copy(tempDistr, next)
+	}
+	return tempDistr
+}
+
+func getDistribution(dices map[string]int, chance float64, shots int, bonus int) []float64 {
+	for d, n := range dices {
+		if n != 0 {
+			break
+		}
+		if d == "d20" {
+			return []float64{1}
+		}
+	}
+	var maxDmg int
+	for dice, number := range dices {
+		switch dice {
+		case "d4":
+			maxDmg += 4 * number
+		case "d6":
+			maxDmg += 6 * number
+		case "d8":
+			maxDmg += 8 * number
+		case "d10":
+			maxDmg += 10 * number
+		case "d12":
+			maxDmg += 12 * number
+		case "d20":
+			maxDmg += 20 * number
+		}
 	}
 
-	return distr
+	var distr []float64
+	if bonus > 0 {
+		distr = make([]float64, maxDmg+bonus+1)
+	} else {
+		distr = make([]float64, maxDmg+1)
+	}
+	distr[0] = 1.0
+
+	for dice, number := range dices {
+		switch dice {
+		case "d4":
+			distr = calculateDice(distr, number, 4, maxDmg)
+		case "d6":
+			distr = calculateDice(distr, number, 6, maxDmg)
+		case "d8":
+			distr = calculateDice(distr, number, 8, maxDmg)
+		case "d10":
+			distr = calculateDice(distr, number, 10, maxDmg)
+		case "d12":
+			distr = calculateDice(distr, number, 12, maxDmg)
+		case "d20":
+			distr = calculateDice(distr, number, 20, maxDmg)
+		}
+	}
+
+	if bonus < 0 {
+		for i := 0; i < -bonus; i++ {
+			distr[i+1] += distr[i]
+		}
+		distr = distr[-bonus:]
+	} else {
+		copy(distr[bonus:], distr)
+	}
+
+	return calculateShots(distr, shots, chance)
 }
