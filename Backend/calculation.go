@@ -1,16 +1,28 @@
 package main
 
-func getMean(distr map[int]float64) float64 {
-	return 0
+import (
+	"math"
+)
+
+func getMean(distr []float64) float64 {
+	M := 0.0
+	for i := range distr {
+		M += float64(i) * distr[i]
+	}
+	return M
 }
 
-func getDispersion(distr map[int]float64) float64 {
-
-	return 0
+func getDispersion(distr []float64) float64 {
+	M := getMean(distr)
+	M2 := 0.0
+	for i := range distr {
+		M2 += math.Pow(float64(i), 2) * distr[i]
+	}
+	return M2 - math.Pow(M, 2)
 }
 
-func getStdDeviation(distr map[int]float64) float64 {
-	return 0
+func getStdDeviation(distr []float64) float64 {
+	return math.Sqrt(getDispersion(distr))
 }
 
 func calculateDice(distr []float64, n int, dice int, maxDmg int) []float64 {
@@ -53,14 +65,16 @@ func calculateShots(distr []float64, n int, chance float64) []float64 {
 }
 
 func getDistribution(dices map[string]int, chance float64, shots int, bonus int) []float64 {
-	for d, n := range dices {
-		if n != 0 {
-			break
-		}
-		if d == "d20" {
-			return []float64{1}
+	c := 0
+	for _, n := range dices {
+		if n == 0 {
+			c += 1
 		}
 	}
+	if c == len(dices) || shots == 0 || chance == 0 {
+		return []float64{1}
+	}
+
 	var maxDmg int
 	for dice, number := range dices {
 		switch dice {
@@ -76,6 +90,8 @@ func getDistribution(dices map[string]int, chance float64, shots int, bonus int)
 			maxDmg += 12 * number
 		case "d20":
 			maxDmg += 20 * number
+		case "d100":
+			maxDmg += 100 * number
 		}
 	}
 
@@ -101,6 +117,8 @@ func getDistribution(dices map[string]int, chance float64, shots int, bonus int)
 			distr = calculateDice(distr, number, 12, maxDmg)
 		case "d20":
 			distr = calculateDice(distr, number, 20, maxDmg)
+		case "d100":
+			distr = calculateDice(distr, number, 100, maxDmg)
 		}
 	}
 
